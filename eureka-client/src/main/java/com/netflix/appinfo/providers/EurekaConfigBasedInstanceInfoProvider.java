@@ -46,7 +46,9 @@ public class EurekaConfigBasedInstanceInfoProvider implements Provider<InstanceI
     public synchronized InstanceInfo get() {
         if (instanceInfo == null) {
             // Build the lease information to be passed to the server based on config
+            // 用构造器模式 创建 LeaseInfo
             LeaseInfo.Builder leaseInfoBuilder = LeaseInfo.Builder.newBuilder()
+                    //
                     .setRenewalIntervalInSecs(config.getLeaseRenewalIntervalInSeconds())
                     .setDurationInSecs(config.getLeaseExpirationDurationInSeconds());
 
