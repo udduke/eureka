@@ -46,23 +46,23 @@ public class EurekaConfigBasedInstanceInfoProvider implements Provider<InstanceI
     public synchronized InstanceInfo get() {
         if (instanceInfo == null) {
             // Build the lease information to be passed to the server based on config
-            // 用构造器模式 创建 LeaseInfo 租约信息
+            // 1-> 用构造器模式 创建 LeaseInfo 租约信息
             LeaseInfo.Builder leaseInfoBuilder = LeaseInfo.Builder.newBuilder()
                     // 设置租约刷新时间间隔 单位秒
                     .setRenewalIntervalInSecs(config.getLeaseRenewalIntervalInSeconds())
                     // 租约过期时间 此时间应该大于 租约刷新时间
                     .setDurationInSecs(config.getLeaseExpirationDurationInSeconds());
-            // 创建vipAddress解析器 兼容旧版本
+            // // 1-> 创建vipAddress解析器 兼容旧版本
             if (vipAddressResolver == null) {
                 vipAddressResolver = new Archaius1VipAddressResolver();
             }
 
             // Builder the instance information to be registered with eureka server
-            // 用构造器模式创建 InstanceInfo 实例信息
+            // 1-> 用构造器模式创建 InstanceInfo 实例信息 该信息用于在eureka server上注册
             InstanceInfo.Builder builder = InstanceInfo.Builder.newBuilder(vipAddressResolver);
 
             // set the appropriate id for the InstanceInfo, falling back to datacenter Id if applicable, else hostname
-            // 从实例配置里获取实例ID 设置实例ID
+            // 1-> 从实例配置里获取实例ID 设置实例ID
             String instanceId = config.getInstanceId();
             // 如果没有设置
             if (instanceId == null || instanceId.isEmpty()) {
@@ -76,7 +76,7 @@ public class EurekaConfigBasedInstanceInfoProvider implements Provider<InstanceI
                 }
             }
 
-            // 设置 默认地址
+            // 1-> 设置 默认地址
             String defaultAddress;
             if (config instanceof RefreshableInstanceConfig) {
                 // Refresh AWS data center info, and return up to date address
@@ -86,13 +86,13 @@ public class EurekaConfigBasedInstanceInfoProvider implements Provider<InstanceI
             }
 
             // fail safe
-            // 如果没有从相关的实例配置中获取默认地址
+            // 1-> 如果没有从相关的实例配置中获取默认地址
             if (defaultAddress == null || defaultAddress.isEmpty()) {
                 // 则设置为IP地址
                 defaultAddress = config.getIpAddress();
             }
 
-            // 构造器继续设置相关配置
+            // 1-> 构造器继续设置相关配置
             builder.setNamespace(config.getNamespace())
                     .setInstanceId(instanceId)
                     .setAppName(config.getAppname())
@@ -114,7 +114,7 @@ public class EurekaConfigBasedInstanceInfoProvider implements Provider<InstanceI
 
 
             // Start off with the STARTING state to avoid traffic
-            // 设置服务状态
+            // 1-> 设置实例状态
             if (!config.isInstanceEnabledOnit()) {
                 InstanceStatus initialStatus = InstanceStatus.STARTING;
                 LOG.info("Setting initial instance status as: {}", initialStatus);
@@ -126,7 +126,7 @@ public class EurekaConfigBasedInstanceInfoProvider implements Provider<InstanceI
             }
 
             // Add any user-specific metadata information
-            // 添加任何特定于用户的元数据信息
+            // 1-> 添加任何特定于用户的元数据信息
             for (Map.Entry<String, String> mapEntry : config.getMetadataMap().entrySet()) {
                 String key = mapEntry.getKey();
                 String value = mapEntry.getValue();
@@ -135,9 +135,9 @@ public class EurekaConfigBasedInstanceInfoProvider implements Provider<InstanceI
                     builder.add(key, value);
                 }
             }
-            // 创建 instanceInfo 实例
+            // 1-> 创建 instanceInfo 实例
             instanceInfo = builder.build();
-            // 添加租约信息
+            // 1-> 添加租约信息
             instanceInfo.setLeaseInfo(leaseInfoBuilder.build());
         }
         return instanceInfo;

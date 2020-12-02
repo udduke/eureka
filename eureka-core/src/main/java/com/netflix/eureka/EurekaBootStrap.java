@@ -160,9 +160,11 @@ public class EurekaBootStrap implements ServletContextListener {
     protected void initEurekaServerContext() throws Exception {
         // 创建一个EurekaServerConfig对象
         // 默认的eureka server 配置
+        // 1-> 创建一个默认的eureka server配置 -> 进入构造函数
         EurekaServerConfig eurekaServerConfig = new DefaultEurekaServerConfig();
 
         // For backward compatibility
+        // 1-> 一些操作
         JsonXStream.getInstance().registerConverter(new V1AwareInstanceInfoConverter(), XStream.PRIORITY_VERY_HIGH);
         XmlXStream.getInstance().registerConverter(new V1AwareInstanceInfoConverter(), XStream.PRIORITY_VERY_HIGH);
 
@@ -172,27 +174,36 @@ public class EurekaBootStrap implements ServletContextListener {
 
         ApplicationInfoManager applicationInfoManager = null;
         // 默认构造函数下 eurekaClient = null
+        // 1-> 如果eurekaClient为null
         if (eurekaClient == null) {
             // 如果eurekaClient == null
             // isCloud? = false
             // EurekaInstanceConfig instanceConfig = new MyDataCenterInstanceConfig()
+            // 1-> 创建一个eureka实例配置
             EurekaInstanceConfig instanceConfig = isCloud(ConfigurationManager.getDeploymentContext())
                     ? new CloudInstanceConfig()
+                    // 1-> 用这个创建
                     : new MyDataCenterInstanceConfig();
 
             // 初始化 ApplicationInfoManager 对象
+            // 1-> 用实例配置创建一个实例信息 并且用实例配置和实例信息创建一个服务信息管理器
+            // -> 进入Provider构造函数
+            // -> get()
+            // -> ApplicationInfoManager构造函数
             applicationInfoManager = new ApplicationInfoManager(
                     instanceConfig, new EurekaConfigBasedInstanceInfoProvider(instanceConfig).get());
-            
+            // 1-> 创建一个默认的eurekaclient配置
             EurekaClientConfig eurekaClientConfig = new DefaultEurekaClientConfig();
-            // 用 应用信息管理器 和 默认的eurekaclient配置 创建 eurekaClient
+            // 用 应用信息管理器 和 默认的eurekaclient配置去创建eurekaClient
+            // 1-> 用服务信息管理器和默认的eurekaclient配置去创建一个eurekaclient
             eurekaClient = new DiscoveryClient(applicationInfoManager, eurekaClientConfig);
         } else {
             // 否则 直接从eureka client中获取 应用信息管理器
             applicationInfoManager = eurekaClient.getApplicationInfoManager();
         }
 
-        // 对等感知实例注册表
+        // 对等节点感知实例注册表
+        // 1-> 声明一个eureka server可感知的对等节点实例注册表
         PeerAwareInstanceRegistry registry;
         if (isAws(applicationInfoManager.getInfo())) {
             registry = new AwsInstanceRegistry(
@@ -204,6 +215,7 @@ public class EurekaBootStrap implements ServletContextListener {
             awsBinder = new AwsBinderDelegate(eurekaServerConfig, eurekaClient.getEurekaClientConfig(), registry, applicationInfoManager);
             awsBinder.start();
         } else {
+            // 1-> 用默认的eureka server配置，默认的eureka client配置，服务编码，以及一个eureka client创建该注册表
             registry = new PeerAwareInstanceRegistryImpl(
                     eurekaServerConfig,
                     eurekaClient.getEurekaClientConfig(),
@@ -213,6 +225,7 @@ public class EurekaBootStrap implements ServletContextListener {
         }
 
         // Helper类，用于管理PeerEurekaNode集合的生命周期
+        // 1-> 创建一个用于管理对等的eureka节点的类
         PeerEurekaNodes peerEurekaNodes = getPeerEurekaNodes(
                 registry,
                 eurekaServerConfig,
@@ -221,7 +234,7 @@ public class EurekaBootStrap implements ServletContextListener {
                 applicationInfoManager
         );
 
-        // 初始化eureka server 服务上下文
+        // 1-> 初始化eureka server 服务上下文
         serverContext = new DefaultEurekaServerContext(
                 eurekaServerConfig,
                 serverCodecs,
@@ -230,19 +243,21 @@ public class EurekaBootStrap implements ServletContextListener {
                 applicationInfoManager
         );
         // 保存服务上下文
+        // 1-> 初始化服务上下文持有者
         EurekaServerContextHolder.initialize(serverContext);
-        // 初始化
+        // 初始化服务上下文
+        // 1-> 初始化服务上下文
         serverContext.initialize();
         logger.info("Initialized server context");
 
         // Copy registry from neighboring eureka node
-        // 从相邻的eureka节点复制注册表
+        // 1-> 从相邻的eureka节点复制注册表
         int registryCount = registry.syncUp();
-        // 对等感知实例注册表 打开通信
+        // 1-> 对等感知实例注册表 打开通信
         registry.openForTraffic(applicationInfoManager, registryCount);
 
         // Register all monitoring statistics.
-        // 注册所有监视统计信息
+        // 1-> 注册所有监视统计信息
         EurekaMonitors.registerAllStats();
     }
     
