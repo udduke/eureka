@@ -159,6 +159,7 @@ public class EurekaBootStrap implements ServletContextListener {
      */
     protected void initEurekaServerContext() throws Exception {
         // 创建一个EurekaServerConfig对象
+        // 默认的eureka server 配置
         EurekaServerConfig eurekaServerConfig = new DefaultEurekaServerConfig();
 
         // For backward compatibility
@@ -184,11 +185,14 @@ public class EurekaBootStrap implements ServletContextListener {
                     instanceConfig, new EurekaConfigBasedInstanceInfoProvider(instanceConfig).get());
             
             EurekaClientConfig eurekaClientConfig = new DefaultEurekaClientConfig();
+            // 用 应用信息管理器 和 默认的eurekaclient配置 创建 eurekaClient
             eurekaClient = new DiscoveryClient(applicationInfoManager, eurekaClientConfig);
         } else {
+            // 否则 直接从eureka client中获取 应用信息管理器
             applicationInfoManager = eurekaClient.getApplicationInfoManager();
         }
 
+        // 对等感知实例注册表
         PeerAwareInstanceRegistry registry;
         if (isAws(applicationInfoManager.getInfo())) {
             registry = new AwsInstanceRegistry(
@@ -208,6 +212,7 @@ public class EurekaBootStrap implements ServletContextListener {
             );
         }
 
+        // Helper类，用于管理PeerEurekaNode集合的生命周期
         PeerEurekaNodes peerEurekaNodes = getPeerEurekaNodes(
                 registry,
                 eurekaServerConfig,
@@ -216,6 +221,7 @@ public class EurekaBootStrap implements ServletContextListener {
                 applicationInfoManager
         );
 
+        // 初始化eureka server 服务上下文
         serverContext = new DefaultEurekaServerContext(
                 eurekaServerConfig,
                 serverCodecs,
@@ -223,17 +229,20 @@ public class EurekaBootStrap implements ServletContextListener {
                 peerEurekaNodes,
                 applicationInfoManager
         );
-
+        // 保存服务上下文
         EurekaServerContextHolder.initialize(serverContext);
-
+        // 初始化
         serverContext.initialize();
         logger.info("Initialized server context");
 
         // Copy registry from neighboring eureka node
+        // 从相邻的eureka节点复制注册表
         int registryCount = registry.syncUp();
+        // 对等感知实例注册表 打开通信
         registry.openForTraffic(applicationInfoManager, registryCount);
 
         // Register all monitoring statistics.
+        // 注册所有监视统计信息
         EurekaMonitors.registerAllStats();
     }
     
