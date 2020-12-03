@@ -101,8 +101,11 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
             .<String, InstanceStatus>build().asMap();
 
     // CircularQueues here for debugging/statistics purposes only
+    // 最近注册队列
     private final CircularQueue<Pair<Long, String>> recentRegisteredQueue;
+    // 最近取消队列
     private final CircularQueue<Pair<Long, String>> recentCanceledQueue;
+    // 最近变更队列
     private ConcurrentLinkedQueue<RecentlyChangedItem> recentlyChangedQueue = new ConcurrentLinkedQueue<RecentlyChangedItem>();
 
     private final ReentrantReadWriteLock readWriteLock = new ReentrantReadWriteLock();
@@ -255,11 +258,14 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
                 }
                 logger.debug("No previous lease information found; it is new registration");
             }
+            // 服务的这个服务实例创建一个租约
             Lease<InstanceInfo> lease = new Lease<InstanceInfo>(registrant, leaseDuration);
             if (existingLease != null) {
                 lease.setServiceUpTimestamp(existingLease.getServiceUpTimestamp());
             }
+            // 保存到注册表中
             gMap.put(registrant.getId(), lease);
+            // 把当前时间和“serverName(服务ID)”加入到最近注册队列
             recentRegisteredQueue.add(new Pair<Long, String>(
                     System.currentTimeMillis(),
                     registrant.getAppName() + "(" + registrant.getId() + ")"));
@@ -279,16 +285,23 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
             }
 
             // Set the status based on the overridden status rules
+            // 根据覆盖的状态规则设置状态
             InstanceStatus overriddenInstanceStatus = getOverriddenInstanceStatus(registrant, existingLease, isReplication);
             registrant.setStatusWithoutDirty(overriddenInstanceStatus);
 
             // If the lease is registered with UP status, set lease service up timestamp
+            // 如果租约已注册为UP状态，请设置租约服务启动时间戳记
             if (InstanceStatus.UP.equals(registrant.getStatus())) {
+                // 初始化租约中的服务启动时间
                 lease.serviceUp();
             }
+            // 设置动作类型为已添加
             registrant.setActionType(ActionType.ADDED);
+            // 把租约加入最近变更队列
             recentlyChangedQueue.add(new RecentlyChangedItem(lease));
+            // 设置服务实例的最后更新时间
             registrant.setLastUpdatedTimestamp();
+            // 过期缓存
             invalidateCache(registrant.getAppName(), registrant.getVIPAddress(), registrant.getSecureVipAddress());
             logger.info("Registered instance {}/{} with status {} (replication={})",
                     registrant.getAppName(), registrant.getId(), registrant.getStatus(), isReplication);
