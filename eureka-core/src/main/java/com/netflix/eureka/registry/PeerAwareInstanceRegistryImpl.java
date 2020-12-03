@@ -404,11 +404,14 @@ public class PeerAwareInstanceRegistryImpl extends AbstractInstanceRegistry impl
      */
     @Override
     public void register(final InstanceInfo info, final boolean isReplication) {
+        // 设置租期
         int leaseDuration = Lease.DEFAULT_DURATION_IN_SECS;
         if (info.getLeaseInfo() != null && info.getLeaseInfo().getDurationInSecs() > 0) {
             leaseDuration = info.getLeaseInfo().getDurationInSecs();
         }
+        // 调用父类的注册方法完成注册
         super.register(info, leaseDuration, isReplication);
+        // 复制到其他节点
         replicateToPeers(Action.Register, info.getAppName(), info.getId(), info, null, isReplication);
     }
 

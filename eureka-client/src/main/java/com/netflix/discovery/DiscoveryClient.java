@@ -331,7 +331,7 @@ public class DiscoveryClient implements EurekaClient {
             this.healthCheckCallbackProvider = args.healthCheckCallbackProvider;
             // 事件监听器
             this.eventListeners.addAll(args.getEventListeners());
-            // 每次注册 处理器
+            // 预注册处理器
             this.preRegistrationHandler = args.preRegistrationHandler;
         } else {
             this.healthCheckCallbackProvider = null;
@@ -1380,6 +1380,7 @@ public class DiscoveryClient implements EurekaClient {
 
             // InstanceInfo replicator
             // 实例信息复制器
+            // 包含了服务注册
             instanceInfoReplicator = new InstanceInfoReplicator(
                     this,
                     instanceInfo,
@@ -1402,7 +1403,7 @@ public class DiscoveryClient implements EurekaClient {
             if (clientConfig.shouldOnDemandUpdateStatusChange()) {
                 applicationInfoManager.registerStatusChangeListener(statusChangeListener);
             }
-
+            // 包含了服务注册
             instanceInfoReplicator.start(clientConfig.getInitialInstanceInfoReplicationIntervalSeconds());
         } else {
             logger.info("Not registering with Eureka server per configuration");
@@ -1477,9 +1478,11 @@ public class DiscoveryClient implements EurekaClient {
      * isDirty flag on the instanceInfo is set to true
      */
     void refreshInstanceInfo() {
+        // 刷新服务信息管理器里的数据中心
         applicationInfoManager.refreshDataCenterInfoIfRequired();
+        // 刷新服务信息管理器里的租约信息
         applicationInfoManager.refreshLeaseInfoIfRequired();
-
+        // 更新服务实例状态
         InstanceStatus status;
         try {
             status = getHealthCheckHandler().getStatus(instanceInfo.getStatus());

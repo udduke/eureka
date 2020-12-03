@@ -61,8 +61,11 @@ class InstanceInfoReplicator implements Runnable {
     }
 
     public void start(int initialDelayMs) {
+        // 设置启动表示
         if (started.compareAndSet(false, true)) {
+            // 设置实例信息是脏的 为了初始化向eureka server进行注册
             instanceInfo.setIsDirty();  // for initial register
+            // this -> 这个类实现了Runable接口 run 方法在下面
             Future next = scheduler.schedule(this, initialDelayMs, TimeUnit.SECONDS);
             scheduledPeriodicRef.set(next);
         }
@@ -114,11 +117,14 @@ class InstanceInfoReplicator implements Runnable {
 
     public void run() {
         try {
+            // 刷新实例信息
             discoveryClient.refreshInstanceInfo();
-
+            // 获取设置为 实例是脏的时间
             Long dirtyTimestamp = instanceInfo.isDirtyWithTime();
             if (dirtyTimestamp != null) {
+                // eureka client 向 eureka server 注册
                 discoveryClient.register();
+                // 设置实例 是不脏的
                 instanceInfo.unsetIsDirty(dirtyTimestamp);
             }
         } catch (Throwable t) {

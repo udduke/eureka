@@ -77,6 +77,21 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
     private static final Logger logger = LoggerFactory.getLogger(AbstractInstanceRegistry.class);
 
     private static final String[] EMPTY_STR_ARRAY = new String[0];
+
+    // 核心数据结构 注册表
+    /**
+     * {
+     *     "AppName1"={
+     *         "Id1"=Lease<InstanceInfo>1,
+     *         "Id2"=Lease<InstanceInfo>2,
+     *         "Id3"=Lease<InstanceInfo>3
+     *     },
+     *     "AppName2"={
+     *
+     *     }
+     * }
+     *
+     */
     private final ConcurrentHashMap<String, Map<String, Lease<InstanceInfo>>> registry
             = new ConcurrentHashMap<String, Map<String, Lease<InstanceInfo>>>();
     protected Map<String, RemoteRegionRegistry> regionNameVSRemoteRegistry = new HashMap<String, RemoteRegionRegistry>();
@@ -191,19 +206,27 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
      * @see com.netflix.eureka.lease.LeaseManager#register(java.lang.Object, int, boolean)
      */
     public void register(InstanceInfo registrant, int leaseDuration, boolean isReplication) {
+        // 加一把读锁
         read.lock();
         try {
+            // 根据服务名称获取服务实例
+            // 一个服务可能有多个服务实例集合
             Map<String, Lease<InstanceInfo>> gMap = registry.get(registrant.getAppName());
             REGISTER.increment(isReplication);
+            // 如果集合不存在 表示该服务之前没注册过
             if (gMap == null) {
+                // 为该服务新建一个服务实例
                 final ConcurrentHashMap<String, Lease<InstanceInfo>> gNewMap = new ConcurrentHashMap<String, Lease<InstanceInfo>>();
+                // 把服务的服务实例加入可感知的注册表中
                 gMap = registry.putIfAbsent(registrant.getAppName(), gNewMap);
                 if (gMap == null) {
                     gMap = gNewMap;
                 }
             }
+            // 根据ID获取该服务实例的租约信息
             Lease<InstanceInfo> existingLease = gMap.get(registrant.getId());
             // Retain the last dirty timestamp without overwriting it, if there is already a lease
+            // 如果已经有租约，则保留最后的脏时间戳而不覆盖它
             if (existingLease != null && (existingLease.getHolder() != null)) {
                 Long existingLastDirtyTimestamp = existingLease.getHolder().getLastDirtyTimestamp();
                 Long registrationLastDirtyTimestamp = registrant.getLastDirtyTimestamp();
@@ -219,10 +242,14 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
                 }
             } else {
                 // The lease does not exist and hence it is a new registration
+                // 租约不存在，因此是新的注册
                 synchronized (lock) {
+                    // 如果期望客户端发送续约数量>0
                     if (this.expectedNumberOfClientsSendingRenews > 0) {
                         // Since the client wants to register it, increase the number of clients sending renews
+                        // 期望客户端发送续约数量 累加1
                         this.expectedNumberOfClientsSendingRenews = this.expectedNumberOfClientsSendingRenews + 1;
+                        // 更新每分钟续约次数
                         updateRenewsPerMinThreshold();
                     }
                 }
