@@ -149,13 +149,19 @@ public class PeerAwareInstanceRegistryImpl extends AbstractInstanceRegistry impl
 
     @Override
     public void init(PeerEurekaNodes peerEurekaNodes) throws Exception {
+        // 一个统计工具
         this.numberOfReplicationsLastMin.start();
+        // 保存 集群阶段信息
         this.peerEurekaNodes = peerEurekaNodes;
+        // 初始化响应缓存
         initializedResponseCache();
+        // 调度续约次数更新任务
         scheduleRenewalThresholdUpdateTask();
+        // 初始化远程注册表
         initRemoteRegionRegistry();
 
         try {
+            // 把自己注册一个监控
             Monitors.registerObject(this);
         } catch (Throwable e) {
             logger.warn("Cannot register the JMX monitor for the InstanceRegistry :", e);
@@ -191,11 +197,14 @@ public class PeerAwareInstanceRegistryImpl extends AbstractInstanceRegistry impl
      *
      */
     private void scheduleRenewalThresholdUpdateTask() {
+        // 启动15min之后每隔15min执行一次
         timer.schedule(new TimerTask() {
                            @Override
                            public void run() {
+                               // 更新续约次数
                                updateRenewalThreshold();
                            }
+                           // 15min
                        }, serverConfig.getRenewalThresholdUpdateIntervalMs(),
                 serverConfig.getRenewalThresholdUpdateIntervalMs());
     }
@@ -546,9 +555,12 @@ public class PeerAwareInstanceRegistryImpl extends AbstractInstanceRegistry impl
             synchronized (lock) {
                 // Update threshold only if the threshold is greater than the
                 // current expected threshold or if self preservation is disabled.
+
+                // 仅当阈值大于当前的预期阈值或禁用了自我保留时，才更新阈值。
                 if ((count) > (serverConfig.getRenewalPercentThreshold() * expectedNumberOfClientsSendingRenews)
                         || (!this.isSelfPreservationModeEnabled())) {
                     this.expectedNumberOfClientsSendingRenews = count;
+                    // 更新每分钟续约次数
                     updateRenewsPerMinThreshold();
                 }
             }

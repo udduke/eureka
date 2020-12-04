@@ -159,6 +159,7 @@ public class RemoteRegionRegistry implements LookupService<String> {
         this.eurekaHttpClient = newEurekaHttpClient;
 
         try {
+            // 从其他eureka server抓取一次注册表
             if (fetchRegistry()) {
                 this.readyForServingData = true;
             } else {
@@ -170,6 +171,7 @@ public class RemoteRegionRegistry implements LookupService<String> {
         }
 
         // remote region fetch
+        // 创建一个从其他eureka server 抓取注册表任务
         Runnable remoteRegionFetchTask = new Runnable() {
             @Override
             public void run() {
@@ -187,6 +189,7 @@ public class RemoteRegionRegistry implements LookupService<String> {
             }
         };
 
+        // 创建一个线程池
         ThreadPoolExecutor remoteRegionFetchExecutor = new ThreadPoolExecutor(
                 1, serverConfig.getRemoteRegionFetchThreadPoolSize(), 0, TimeUnit.SECONDS, new SynchronousQueue<Runnable>());  // use direct handoff
 
@@ -196,6 +199,7 @@ public class RemoteRegionRegistry implements LookupService<String> {
                         .setDaemon(true)
                         .build());
 
+        // 启动定时抓取任务
         scheduler.schedule(
                 new TimedSupervisorTask(
                         "RemoteRegionFetch_" + regionName,

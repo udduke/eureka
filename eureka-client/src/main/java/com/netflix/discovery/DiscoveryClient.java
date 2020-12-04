@@ -485,6 +485,7 @@ public class DiscoveryClient implements EurekaClient {
         }
 
         // client如果需要向eureka注册 且 需要在初始化执行注册
+        // 默认值 ture & flase
         if (clientConfig.shouldRegisterWithEureka() && clientConfig.shouldEnforceRegistrationAtInit()) {
             try {
                 // 向eurekaserver进行注册
@@ -1340,6 +1341,7 @@ public class DiscoveryClient implements EurekaClient {
         // 如果需要抓取注册表
         if (clientConfig.shouldFetchRegistry()) {
             // registry cache refresh timer
+            // 注册表抓取时间间隔 30S
             int registryFetchIntervalSeconds = clientConfig.getRegistryFetchIntervalSeconds();
             int expBackOffBound = clientConfig.getCacheRefreshExecutorExponentialBackOffBound();
             // 缓存刷新任务
@@ -1359,6 +1361,7 @@ public class DiscoveryClient implements EurekaClient {
 
         // 如果需要向eureka注册
         if (clientConfig.shouldRegisterWithEureka()) {
+            // 30秒
             int renewalIntervalInSecs = instanceInfo.getLeaseInfo().getRenewalIntervalInSecs();
             int expBackOffBound = clientConfig.getHeartbeatExecutorExponentialBackOffBound();
             logger.info("Starting heartbeat executor: " + "renew interval is: {}", renewalIntervalInSecs);
@@ -1384,6 +1387,7 @@ public class DiscoveryClient implements EurekaClient {
             instanceInfoReplicator = new InstanceInfoReplicator(
                     this,
                     instanceInfo,
+                    // 30秒
                     clientConfig.getInstanceInfoReplicationIntervalSeconds(),
                     2); // burstSize
             // 状态变更监听器
@@ -1404,6 +1408,7 @@ public class DiscoveryClient implements EurekaClient {
                 applicationInfoManager.registerStatusChangeListener(statusChangeListener);
             }
             // 包含了服务注册
+            // 40秒
             instanceInfoReplicator.start(clientConfig.getInitialInstanceInfoReplicationIntervalSeconds());
         } else {
             logger.info("Not registering with Eureka server per configuration");

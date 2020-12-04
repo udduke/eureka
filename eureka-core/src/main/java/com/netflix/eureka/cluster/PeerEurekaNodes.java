@@ -73,6 +73,7 @@ public class PeerEurekaNodes {
     }
 
     public void start() {
+        // 创建一个单线程执行器
         taskExecutor = Executors.newSingleThreadScheduledExecutor(
                 new ThreadFactory() {
                     @Override
@@ -84,7 +85,9 @@ public class PeerEurekaNodes {
                 }
         );
         try {
+            // 更新eureka server集群节点
             updatePeerEurekaNodes(resolvePeerUrls());
+            // 创建一个 跟新集群节点任务
             Runnable peersUpdateTask = new Runnable() {
                 @Override
                 public void run() {
@@ -96,8 +99,10 @@ public class PeerEurekaNodes {
 
                 }
             };
+            // 执行任务
             taskExecutor.scheduleWithFixedDelay(
                     peersUpdateTask,
+                    // 10 分钟
                     serverConfig.getPeerEurekaNodesUpdateIntervalMs(),
                     serverConfig.getPeerEurekaNodesUpdateIntervalMs(),
                     TimeUnit.MILLISECONDS
