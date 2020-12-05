@@ -73,6 +73,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Karthik Ranganathan, Greg Kim
  */
+// 负责缓存将由客户端查询的注册表信息的类。
 public class ResponseCacheImpl implements ResponseCache {
 
     private static final Logger logger = LoggerFactory.getLogger(ResponseCacheImpl.class);
@@ -131,7 +132,7 @@ public class ResponseCacheImpl implements ResponseCache {
         this.readWriteCacheMap =
                 // 获取responseCache的容量，默认值为1000
                 CacheBuilder.newBuilder().initialCapacity(serverConfig.getInitialCapacityOfResponseCache())
-                        // 缓存过期时间 180秒
+                        // 定时过期读写缓存里的数据 缓存过期时间 180秒
                         .expireAfterWrite(serverConfig.getResponseCacheAutoExpirationInSeconds(), TimeUnit.SECONDS)
                         // 移除监听器
                         .removalListener(new RemovalListener<Key, Value>() {
@@ -158,6 +159,8 @@ public class ResponseCacheImpl implements ResponseCache {
 
         if (shouldUseReadOnlyResponseCache) {
             // 启动缓存更新任务
+            // 将读写缓存的数据同步到只读缓存中
+            // 在当前时间的30S后开始执行第一次，之后每隔30S执行一次
             timer.schedule(getCacheUpdateTask(),
                     new Date(((System.currentTimeMillis() / responseCacheUpdateIntervalMs) * responseCacheUpdateIntervalMs)
                             + responseCacheUpdateIntervalMs),

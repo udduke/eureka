@@ -47,6 +47,7 @@ public interface EurekaInstanceConfig {
      *
      * @return the (appname scoped) unique id for this instance
      */
+    // 获取要在eureka中注册的该实例的唯一ID（在appName的范围内）
     String getInstanceId();
 
     /**
@@ -54,6 +55,7 @@ public interface EurekaInstanceConfig {
      *
      * @return string denoting the name.
      */
+    // 获取要在eureka注册的应用程序的名称
     String getAppname();
 
     /**

@@ -133,11 +133,15 @@ public class PeerEurekaNodes {
      * @return peer URLs with node's own URL filtered out
      */
     protected List<String> resolvePeerUrls() {
+        // 获取自己的实例信息
         InstanceInfo myInfo = applicationInfoManager.getInfo();
+        // 获取所在空间
         String zone = InstanceInfo.getZone(clientConfig.getAvailabilityZones(clientConfig.getRegion()), myInfo);
+        // 获取需要复制的集群节点的URl
         List<String> replicaUrls = EndpointUtils
                 .getDiscoveryServiceUrls(clientConfig, zone, new EndpointUtils.InstanceInfoBasedUrlRandomizer(myInfo));
 
+        // 从url列表中移除自己
         int idx = 0;
         while (idx < replicaUrls.size()) {
             if (isThisMyUrl(replicaUrls.get(idx))) {
@@ -160,9 +164,10 @@ public class PeerEurekaNodes {
             logger.warn("The replica size seems to be empty. Check the route 53 DNS Registry");
             return;
         }
-
+        // 空的
         Set<String> toShutdown = new HashSet<>(peerEurekaNodeUrls);
         toShutdown.removeAll(newPeerUrls);
+        // 有值
         Set<String> toAdd = new HashSet<>(newPeerUrls);
         toAdd.removeAll(peerEurekaNodeUrls);
 
@@ -171,6 +176,8 @@ public class PeerEurekaNodes {
         }
 
         // Remove peers no long available
+
+        // 移除掉不可用的节点
         List<PeerEurekaNode> newNodeList = new ArrayList<>(peerEurekaNodes);
 
         if (!toShutdown.isEmpty()) {
@@ -188,13 +195,15 @@ public class PeerEurekaNodes {
         }
 
         // Add new peers
+        // 添加新的节点
         if (!toAdd.isEmpty()) {
             logger.info("Adding new peer nodes {}", toAdd);
             for (String peerUrl : toAdd) {
+                // 创建一个新的节点并加入
                 newNodeList.add(createPeerEurekaNode(peerUrl));
             }
         }
-
+        // 保存
         this.peerEurekaNodes = newNodeList;
         this.peerEurekaNodeUrls = new HashSet<>(newPeerUrls);
     }
@@ -205,6 +214,7 @@ public class PeerEurekaNodes {
         if (targetHost == null) {
             targetHost = "host";
         }
+        // 创建节点
         return new PeerEurekaNode(registry, targetHost, peerEurekaNodeUrl, replicationClient, serverConfig);
     }
 

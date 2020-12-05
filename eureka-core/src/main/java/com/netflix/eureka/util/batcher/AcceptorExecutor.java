@@ -43,6 +43,8 @@ import static com.netflix.eureka.Names.METRIC_REPLICATION_PREFIX;
  *
  * @author Tomasz Bak
  */
+// 具有内部线程的活动对象，该活动对象接受来自客户端的任务，并以基于拉的方式将其分配给工作人员。
+// 工作者在可用时会明确要求一个或一批项目。 这样可以确保要处理的数据始终是最新的，并且不会进行过时的数据处
 class AcceptorExecutor<ID, T> {
 
     private static final Logger logger = LoggerFactory.getLogger(AcceptorExecutor.class);
