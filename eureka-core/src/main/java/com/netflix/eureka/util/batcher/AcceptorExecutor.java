@@ -188,6 +188,7 @@ class AcceptorExecutor<ID, T> {
             long scheduleTime = 0;
             while (!isShutdown.get()) {
                 try {
+                    // 消耗输入队列
                     drainInputQueues();
 
                     int totalItems = processingOrder.size();
@@ -197,7 +198,9 @@ class AcceptorExecutor<ID, T> {
                         scheduleTime = now + trafficShaper.transmissionDelay();
                     }
                     if (scheduleTime <= now) {
+                        // 分配批处理工作
                         assignBatchWork();
+                        // 分配单项工作
                         assignSingleItemWork();
                     }
 

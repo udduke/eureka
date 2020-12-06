@@ -160,6 +160,7 @@ public class PeerEurekaNodes {
      * @param newPeerUrls peer node URLs; this collection should have local node's URL filtered out
      */
     protected void updatePeerEurekaNodes(List<String> newPeerUrls) {
+        // 如果没有其他节点的url 直接返回
         if (newPeerUrls.isEmpty()) {
             logger.warn("The replica size seems to be empty. Check the route 53 DNS Registry");
             return;

@@ -661,9 +661,11 @@ public class PeerAwareInstanceRegistryImpl extends AbstractInstanceRegistry impl
 
             for (final PeerEurekaNode node : peerEurekaNodes.getPeerEurekaNodes()) {
                 // If the url represents this host, do not replicate to yourself.
+                // 排除自己
                 if (peerEurekaNodes.isThisMyUrl(node.getServiceUrl())) {
                     continue;
                 }
+                // 向其他节点进行复制
                 replicateInstanceActionsToPeers(action, appName, id, info, newStatus, node);
             }
         } finally {
